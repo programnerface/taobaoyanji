@@ -1,0 +1,219 @@
+
+<style>
+    /* 1. 弹窗的黑色半透明背景 */
+    #image-popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999; /* 确保在最上层 */
+    }
+
+    /* 2. 弹窗中放大的图片 */
+    #image-popup-overlay img {
+        max-width: 90%;
+        max-height: 90%;
+        border: 3px solid white;
+        border-radius: 5px;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-6">
+            <h3 class="text-center">{$title|htmlentities}</h3>
+<!--            <img id="sn-image-native" src="{$image_url|htmlentities}" alt="{$title|htmlentities}" style="max-width: 100%; cursor: pointer; border: 1px solid #ddd; padding: 4px; border-radius: 4px;">-->
+            {if $viewType == 'image'}
+            <img id="sn-image-native" src="{$file_url|htmlentities}" alt="{$title|htmlentities}" style="max-width: 100%; cursor: pointer; border: 1px solid #ddd; padding: 4px; border-radius: 4px;">
+            {else /}
+            <canvas id="pdf-canvas" data-file-url="{$file_url|htmlentities}" style="border:1px solid #ddd; width:100%;"></canvas>
+            {/if}
+        </div>
+
+        <div class="col-xs-6">
+            <h3 class="text-center">识别结果</h3>
+            <table class="table table-striped table-bordered">
+                <thead>
+                <tr><th style="width:100px;">Key</th><th>Value</th></tr>
+                </thead>
+                <tbody>
+                <tr><td>SN码</td><td>{$row.serial_number|default='N/A'}</td></tr>
+                <tr><td>IMEI1码</td><td>{$row.imei1|default='N/A'}</td></tr>
+                <tr><td>IMEI2码</td><td>{$row.imei2|default='N/A'}</td></tr>
+                <tr><td>商品型号</td><td>{$row.product_model|default='N/A'}</td></tr>
+                <tr><td>校验状态</td><td>{$row.verification_status|default='N/A'}</td></tr>
+                <tr><td>失败原因</td><td>{$row.verification_result|default='N/A'}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!--{if $viewType == 'pdf'}-->
+<!--<script type="module">-->
+<!--    import * as pdfjsLib from '/assets/js/pdfjs/build/pdf.mjs';-->
+
+<!--    pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/js/pdfjs/build/pdf.worker.mjs';-->
+
+<!--    const canvas = document.getElementById('pdf-canvas');-->
+
+<!--    // -&#45;&#45; 关键改动：从canvas的data属性中读取URL -&#45;&#45;-->
+<!--    const originalPdfUrl = canvas.dataset.fileUrl;-->
+<!--    // -&#45;&#45; 修改结束 -&#45;&#45;-->
+
+<!--    const pdfProxyUrl = `{:url('threec_product/proxy_pdf')}?url=${encodeURIComponent(originalPdfUrl)}`;-->
+<!--    const context = canvas.getContext('2d');-->
+
+<!--    pdfjsLib.getDocument(pdfProxyUrl).promise.then(function(pdf) {-->
+<!--        return pdf.getPage(1);-->
+<!--    }).then(function(page) {-->
+<!--        const viewport = page.getViewport({ scale: 2.0 });-->
+<!--        canvas.height = viewport.height;-->
+<!--        canvas.width = viewport.width;-->
+<!--        page.render({ canvasContext: context, viewport: viewport });-->
+<!--    });-->
+<!--</script>-->
+<!--{/if}-->
+{if $viewType == 'pdf'}
+<!--<script type="module">-->
+<!--    // 1. 从我们已经确认可用的路径加载-->
+<!--    import * as pdfjsLib from '/assets/js/pdfjs/build/pdf.mjs';-->
+
+<!--    // 2. 设置 worker 路径-->
+<!--    pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/js/pdfjs/build/pdf.worker.mjs';-->
+
+<!--    const canvas = document.getElementById('pdf-canvas');-->
+<!--    // 3. 从canvas的data属性中安全地读取URL-->
+<!--    const originalPdfUrl = canvas.dataset.fileUrl;-->
+<!--    const context = canvas.getContext('2d');-->
+
+<!--    // 4. 构建指向我们自己PHP代理的URL-->
+<!--    const pdfProxyUrl = `{:url('threec_product/proxy_pdf')}?url=${encodeURIComponent(originalPdfUrl)}`;-->
+
+<!--    // 5. 使用我们自己的代理URL加载并渲染文档-->
+<!--    pdfjsLib.getDocument(pdfProxyUrl).promise.then(function(pdf) {-->
+<!--        return pdf.getPage(1);-->
+<!--    }).then(function(page) {-->
+<!--        const viewport = page.getViewport({ scale: 2.0 });-->
+<!--        canvas.height = viewport.height;-->
+<!--        canvas.width = viewport.width;-->
+<!--        return page.render({ canvasContext: context, viewport: viewport }).promise;-->
+<!--    }).then(function () {-->
+<!--        // 6. 渲染成功后，为canvas绑定点击放大事件-->
+<!--        if (window.parent && window.parent.Layer) {-->
+<!--            const Layer = window.parent.Layer;-->
+<!--            canvas.addEventListener('click', function () {-->
+<!--                // 调用父页面的Layer.photos来放大-->
+<!--                Layer.photos({-->
+<!--                    photos: {-->
+<!--                        "data": [{-->
+<!--                            // 将canvas的当前内容转换为图片数据URL-->
+<!--                            "src": canvas.toDataURL("image/png")-->
+<!--                        }]-->
+<!--                    }-->
+<!--                });-->
+<!--            });-->
+<!--        }-->
+<!--    });-->
+<!--</script>-->
+
+
+<script type="module">
+    // 1. 从我们已经确认可用的路径加载
+    import * as pdfjsLib from '/assets/js/pdfjs/build/pdf.mjs';
+
+    // 2. 设置 worker 路径
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/js/pdfjs/build/pdf.worker.mjs';
+
+    const canvas = document.getElementById('pdf-canvas');
+    const originalPdfUrl = canvas.dataset.fileUrl;
+    const context = canvas.getContext('2d');
+    const pdfProxyUrl = `{:url('threec_product/proxy_pdf')}?url=${encodeURIComponent(originalPdfUrl)}`;
+
+    // 3. 加载并渲染文档
+    pdfjsLib.getDocument(pdfProxyUrl).promise.then(function(pdf) {
+        return pdf.getPage(1);
+    }).then(function(page) {
+        // --- 并行操作：同时渲染页面并提取文本 ---
+        const viewport = page.getViewport({ scale: 2.0 });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        // a. 渲染页面
+        page.render({ canvasContext: context, viewport: viewport });
+
+        // b. 提取文本内容
+        return page.getTextContent();
+
+    }).then(function(textContent) {
+        // --- 文本提取成功后，打印到控制台 ---
+        // const fullText = textContent.items.map(item => item.str).join(' ');
+        // console.log("--- PDF 文本提取结果 ---");
+        // console.log(fullText);
+
+        const lines = {};
+        // 1. 根据Y坐标（item.transform[5]）将文本项分组，聚合成行
+        textContent.items.forEach(item => {
+            const y = Math.round(item.transform[5]); // 四舍五入Y坐标
+            if (!lines[y]) {
+                lines[y] = [];
+            }
+            lines[y].push(item);
+        });
+
+        // 2. 对每一行内的文本项按X坐标（item.transform[4]）排序，并拼接成字符串
+        const sortedLines = Object.keys(lines)
+            .sort((a, b) => b - a) // 按Y坐标从上到下排序
+            .map(y => {
+                return lines[y]
+                    .sort((a, b) => a.transform[4] - b.transform[4]) // 按X坐标从左到右排序
+                    .map(item => item.str)
+                    .join('');
+            });
+
+        // 3. 从重组好的行文本中提取我们需要的信息
+        const invoiceData = {};
+        sortedLines.forEach(line => {
+            if (line.includes('发票号码：')) {
+                invoiceData['发票号码'] = line.replace('发票号码：', '').trim();
+            }
+            if (line.includes('开票日期：')) {
+                invoiceData['开票日期'] = line.replace('开票日期：', '').trim();
+            }
+            // 您可以继续添加其他字段的提取规则
+        });
+
+        // 4. 在控制台以清晰的格式打印出最终结果
+        console.log("--- PDF 结构化提取结果 ---");
+        console.table(invoiceData);
+
+    }).then(function() {
+        // --- 为canvas绑定点击放大事件 ---
+        if (window.parent && window.parent.Layer && window.parent.$) {
+            const Layer = window.parent.Layer;
+            const $ = window.parent.$;
+
+            canvas.addEventListener('click', function () {
+                // --- 核心改动：获取当前弹窗的z-index并加1 ---
+                const parentLayer = $(canvas).closest('.layui-layer');
+
+                // --- 修改结束 ---
+
+                Layer.photos({
+                    photos: {
+                        "data": [{
+                            "src": canvas.toDataURL("image/png")
+                        }],
+
+                    },
+                    zIndex: 99999999
+                });
+            });
+        }
+    });
+</script>
+{/if}

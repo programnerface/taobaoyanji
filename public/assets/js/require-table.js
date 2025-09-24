@@ -24,7 +24,9 @@ define(['jquery', 'bootstrap', 'moment', 'moment/locale/zh-cn', 'bootstrap-table
                         return !isNaN($(cell).text()) ? '\\@' : '';
                     },
                 },
-                ignoreColumn: [0, 'operate'] //默认不导出第一列(checkbox)与操作(operate)列
+                ignoreColumn: [0, 'operate'], //默认不导出第一列(checkbox)与操作(operate)列
+                csvEnclosure: '',
+                useUnformattedData: true,
             },
             pageSize: Config.pagesize || localStorage.getItem("pagesize") || 10,
             pageList: [10, 15, 20, 25, 50, 'All'],
@@ -59,6 +61,7 @@ define(['jquery', 'bootstrap', 'moment', 'moment/locale/zh-cn', 'bootstrap-table
                 del_url: '',
                 import_url: '',
                 multi_url: '',
+                import_log_url:'',
                 dragsort_url: 'ajax/weigh',
             }
         },
@@ -72,6 +75,7 @@ define(['jquery', 'bootstrap', 'moment', 'moment/locale/zh-cn', 'bootstrap-table
             toolbar: '.toolbar',
             refreshbtn: '.btn-refresh',
             addbtn: '.btn-add',
+            import_log_url:'.btn-import_log_url',
             editbtn: '.btn-edit',
             delbtn: '.btn-del',
             importbtn: '.btn-import',
@@ -379,6 +383,15 @@ define(['jquery', 'bootstrap', 'moment', 'moment/locale/zh-cn', 'bootstrap-table
                 toolbar.on('click', Table.config.addbtn, function () {
                     var ids = Table.api.selectedids(table);
                     var url = options.extend.add_url;
+                    if (url.indexOf("{ids}") !== -1) {
+                        url = Table.api.replaceurl(url, {ids: ids.length > 0 ? ids.join(",") : 0}, table);
+                    }
+                    Fast.api.open(url, $(this).data("original-title") || $(this).attr("title") || __('Add'), $(this).data() || {});
+                });
+               //插件导入
+                toolbar.on('click', Table.config.import_log_url, function () {
+                    var ids = Table.api.selectedids(table);
+                    var url = options.extend.import_log_url;
                     if (url.indexOf("{ids}") !== -1) {
                         url = Table.api.replaceurl(url, {ids: ids.length > 0 ? ids.join(",") : 0}, table);
                     }

@@ -2,7 +2,18 @@
 
 return [
     'autoload' => false,
-    'hooks' => [],
+    'hooks' => [
+        'app_init' => [
+            'famysql',
+        ],
+        'upgrade' => [
+            'famysql',
+            'simditor',
+        ],
+        'config_init' => [
+            'simditor',
+        ],
+    ],
     'route' => [
         '/example$' => 'example/index/index',
         '/example/d/[:name]' => 'example/demo/index',

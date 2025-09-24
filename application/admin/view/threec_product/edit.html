@@ -1,0 +1,220 @@
+<form id="edit-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Store_name')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-store_name" data-rule="required" class="form-control" name="row[store_name]" type="text" value="{$row.store_name|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Platform_order_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-platform_order_id" data-rule="required" data-source="platform/order/index" class="form-control " name="row[platform_order_id]" type="text" value="{$row.platform_order_id|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Merchant_order_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-merchant_order_id" data-rule="required" data-source="merchant/order/index" class="form-control " name="row[merchant_order_id]" type="text" value="{$row.merchant_order_id|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Category')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-category" class="form-control" name="row[category]" type="text" value="{$row.category|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Energy_efficiency_level')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-energy_efficiency_level" class="form-control" name="row[energy_efficiency_level]" type="text" value="{$row.energy_efficiency_level|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Brand')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-brand" class="form-control" name="row[brand]" type="text" value="{$row.brand|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Product_model')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-product_model" class="form-control" name="row[product_model]" type="text" value="{$row.product_model|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Order_amount')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-order_amount" class="form-control" step="0.01" name="row[order_amount]" type="number" value="{$row.order_amount|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Actual_paid_amount')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-actual_paid_amount" class="form-control" step="0.01" name="row[actual_paid_amount]" type="number" value="{$row.actual_paid_amount|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Transaction_time')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-transaction_time" class="form-control datetimepicker" data-date-format="YYYY-MM-DD HH:mm:ss" data-use-current="true" name="row[transaction_time]" type="text" value="{$row.transaction_time}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Gov_subsidy_amount')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-gov_subsidy_amount" class="form-control" step="0.01" name="row[gov_subsidy_amount]" type="number" value="{$row.gov_subsidy_amount|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Sn_image_url')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-sn_image_url" class="form-control" name="row[sn_image_url]" type="text" value="{$row.sn_image_url|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Inspection_image_url')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-inspection_image_url" class="form-control" name="row[inspection_image_url]" type="text" value="{$row.inspection_image_url|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Screen_on_image_url')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-screen_on_image_url" class="form-control" name="row[screen_on_image_url]" type="text" value="{$row.screen_on_image_url|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Ean_code')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-ean_code" class="form-control" name="row[ean_code]" type="text" value="{$row.ean_code|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Serial_number')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-serial_number" class="form-control" name="row[serial_number]" type="text" value="{$row.serial_number|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Imei1')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-imei1" class="form-control" name="row[imei1]" type="text" value="{$row.imei1|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Imei2')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-imei2" class="form-control" name="row[imei2]" type="text" value="{$row.imei2|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Invoice_number')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-invoice_number" class="form-control" name="row[invoice_number]" type="text" value="{$row.invoice_number|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Invoice_date')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-invoice_date" class="form-control datetimepicker" data-date-format="YYYY-MM-DD HH:mm:ss" data-use-current="true" name="row[invoice_date]" type="text" value="{$row.invoice_date}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Invoice_url')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-invoice_url" class="form-control" name="row[invoice_url]" type="text" value="{$row.invoice_url|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Invoice_header')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-invoice_header" class="form-control" name="row[invoice_header]" type="text" value="{$row.invoice_header|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Invoice_amount')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-invoice_amount" class="form-control" step="0.01" name="row[invoice_amount]" type="number" value="{$row.invoice_amount|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Seller_tax_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-seller_tax_id" data-rule="required" data-source="seller/tax/index" class="form-control " name="row[seller_tax_id]" type="text" value="{$row.seller_tax_id|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Tracking_number')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-tracking_number" class="form-control" name="row[tracking_number]" type="text" value="{$row.tracking_number|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Tracking_map_url')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-tracking_map_url" class="form-control" name="row[tracking_map_url]" type="text" value="{$row.tracking_map_url|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Shipping_company')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-shipping_company" class="form-control" name="row[shipping_company]" type="text" value="{$row.shipping_company|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Recipient_province')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-recipient_province" class="form-control" name="row[recipient_province]" type="text" value="{$row.recipient_province|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Recipient_city')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class='control-relative'><input id="c-recipient_city" class="form-control" data-toggle="city-picker" name="row[recipient_city]" type="text" value="{$row.recipient_city|htmlentities}"></div>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Recipient_district')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-recipient_district" class="form-control" name="row[recipient_district]" type="text" value="{$row.recipient_district|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Recipient_address')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-recipient_address" class="form-control" name="row[recipient_address]" type="text" value="{$row.recipient_address|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Delivery_time')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-delivery_time" class="form-control datetimepicker" data-date-format="YYYY-MM-DD HH:mm:ss" data-use-current="true" name="row[delivery_time]" type="text" value="{$row.delivery_time}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Verification_status')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            
+            <div class="radio">
+            {foreach name="verificationStatusList" item="vo"}
+            <label for="row[verification_status]-{$key}"><input id="row[verification_status]-{$key}" name="row[verification_status]" type="radio" value="{$key}" {in name="key" value="$row.verification_status"}checked{/in} /> {$vo}</label> 
+            {/foreach}
+            </div>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Verification_result')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <textarea id="c-verification_result" class="form-control " rows="5" name="row[verification_result]" cols="50">{$row.verification_result|htmlentities}</textarea>
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+        </div>
+    </div>
+</form>

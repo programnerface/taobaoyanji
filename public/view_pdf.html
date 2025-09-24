@@ -1,0 +1,565 @@
+<!--<!DOCTYPE html>-->
+<!--<html>-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>PDF.js 本地和在线PDF测试</title>-->
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: sans-serif;-->
+<!--            text-align: center;-->
+<!--            padding: 20px;-->
+<!--            background: #f5f5f5;-->
+<!--        }-->
+<!--        .container {-->
+<!--            max-width: 900px;-->
+<!--            margin: 0 auto;-->
+<!--            background: white;-->
+<!--            padding: 20px;-->
+<!--            border-radius: 8px;-->
+<!--            box-shadow: 0 2px 10px rgba(0,0,0,0.1);-->
+<!--        }-->
+<!--        #pdf-canvas {-->
+<!--            border: 1px solid #ddd;-->
+<!--            margin-top: 15px;-->
+<!--            max-width: 100%;-->
+<!--            box-shadow: 0 4px 8px rgba(0,0,0,0.1);-->
+<!--        }-->
+<!--        #loading-message {-->
+<!--            color: #666;-->
+<!--            margin: 20px 0;-->
+<!--            font-size: 16px;-->
+<!--        }-->
+<!--        .error { color: #e74c3c !important; }-->
+<!--        .success { color: #27ae60 !important; }-->
+<!--        .controls {-->
+<!--            margin: 20px 0;-->
+<!--            display: flex;-->
+<!--            gap: 10px;-->
+<!--            justify-content: center;-->
+<!--            align-items: center;-->
+<!--            flex-wrap: wrap;-->
+<!--        }-->
+<!--        button {-->
+<!--            padding: 10px 20px;-->
+<!--            border: none;-->
+<!--            border-radius: 5px;-->
+<!--            background: #3498db;-->
+<!--            color: white;-->
+<!--            cursor: pointer;-->
+<!--            font-size: 14px;-->
+<!--        }-->
+<!--        button:hover { background: #2980b9; }-->
+<!--        button:disabled {-->
+<!--            background: #bdc3c7;-->
+<!--            cursor: not-allowed;-->
+<!--        }-->
+<!--        input[type="file"] {-->
+<!--            padding: 8px;-->
+<!--            border: 1px solid #ddd;-->
+<!--            border-radius: 4px;-->
+<!--        }-->
+<!--        .page-info {-->
+<!--            margin: 10px 0;-->
+<!--            font-weight: bold;-->
+<!--            color: #2c3e50;-->
+<!--        }-->
+<!--        .url-input {-->
+<!--            width: 100%;-->
+<!--            max-width: 500px;-->
+<!--            padding: 10px;-->
+<!--            margin: 10px;-->
+<!--            border: 1px solid #ddd;-->
+<!--            border-radius: 4px;-->
+<!--            font-size: 14px;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+<!--<div class="container">-->
+<!--    <h1>PDF.js 本地和在线PDF查看器</h1>-->
+
+<!--    <div class="controls">-->
+<!--        <input type="file" id="file-input" accept=".pdf" />-->
+<!--        <button onclick="loadLocalPdf()">加载本地PDF</button>-->
+<!--    </div>-->
+
+<!--    <div class="controls">-->
+<!--        <input type="text" id="url-input" class="url-input"-->
+<!--               value="https://inv.alicdn.com/cb/OSTB_3248442096MM7a0k0flyjIYFf.pdf"-->
+<!--               placeholder="输入PDF URL"/>-->
+<!--        <button onclick="loadOnlinePdf()">加载在线PDF</button>-->
+<!--    </div>-->
+
+<!--    <div class="controls">-->
+<!--        <button onclick="loadTestPdf()">加载测试PDF</button>-->
+<!--        <button onclick="prevPage()" id="prev-btn" disabled>上一页</button>-->
+<!--        <button onclick="nextPage()" id="next-btn" disabled>下一页</button>-->
+<!--    </div>-->
+
+<!--    <div id="loading-message">请选择要加载的PDF文件</div>-->
+<!--    <div id="page-info" class="page-info" style="display: none;"></div>-->
+
+<!--    <div>-->
+<!--        <canvas id="pdf-canvas" style="display: none;"></canvas>-->
+<!--    </div>-->
+<!--</div>-->
+
+<!--<script type="module">-->
+<!--    // 修正PDF.js路径 - 根据您的文件结构调整-->
+<!--    import * as pdfjsLib from './assets/js/pdfjs/build/pdf.mjs';-->
+
+<!--    // 设置worker路径-->
+<!--    pdfjsLib.GlobalWorkerOptions.workerSrc = './assets/js/pdfjs/build/pdf.worker.mjs';-->
+
+<!--    let pdfDocument = null;-->
+<!--    let currentPage = 1;-->
+<!--    let totalPages = 0;-->
+
+<!--    const canvas = document.getElementById('pdf-canvas');-->
+<!--    const context = canvas.getContext('2d');-->
+<!--    const loadingMessage = document.getElementById('loading-message');-->
+<!--    const pageInfo = document.getElementById('page-info');-->
+<!--    const prevBtn = document.getElementById('prev-btn');-->
+<!--    const nextBtn = document.getElementById('next-btn');-->
+
+<!--    // 渲染指定页面-->
+<!--    function renderPage(pageNum) {-->
+<!--        loadingMessage.textContent = `正在渲染第 ${pageNum} 页...`;-->
+<!--        loadingMessage.className = '';-->
+
+<!--        pdfDocument.getPage(pageNum).then(function(page) {-->
+<!--            const viewport = page.getViewport({ scale: 1.5 });-->
+<!--            canvas.height = viewport.height;-->
+<!--            canvas.width = viewport.width;-->
+<!--            canvas.style.display = 'block';-->
+
+<!--            const renderContext = {-->
+<!--                canvasContext: context,-->
+<!--                viewport: viewport-->
+<!--            };-->
+
+<!--            return page.render(renderContext).promise;-->
+<!--        }).then(function() {-->
+<!--            loadingMessage.style.display = 'none';-->
+<!--            pageInfo.textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;-->
+<!--            pageInfo.style.display = 'block';-->
+<!--            updateNavigationButtons();-->
+<!--        }).catch(function(error) {-->
+<!--            console.error('渲染页面失败:', error);-->
+<!--            showError('渲染页面失败: ' + error.message);-->
+<!--        });-->
+<!--    }-->
+
+<!--    // 更新导航按钮状态-->
+<!--    function updateNavigationButtons() {-->
+<!--        prevBtn.disabled = currentPage <= 1;-->
+<!--        nextBtn.disabled = currentPage >= totalPages;-->
+<!--    }-->
+
+<!--    // 显示错误信息-->
+<!--    function showError(message) {-->
+<!--        loadingMessage.textContent = message;-->
+<!--        loadingMessage.className = 'error';-->
+<!--        loadingMessage.style.display = 'block';-->
+<!--        canvas.style.display = 'none';-->
+<!--        pageInfo.style.display = 'none';-->
+<!--    }-->
+
+<!--    // 显示成功信息-->
+<!--    function showSuccess(message) {-->
+<!--        loadingMessage.textContent = message;-->
+<!--        loadingMessage.className = 'success';-->
+<!--    }-->
+
+<!--    // 加载PDF文档-->
+<!--    function loadPdfDocument(source, sourceType) {-->
+<!--        showSuccess(`正在加载${sourceType}PDF...`);-->
+<!--        canvas.style.display = 'none';-->
+<!--        pageInfo.style.display = 'none';-->
+<!--        prevBtn.disabled = true;-->
+<!--        nextBtn.disabled = true;-->
+
+<!--        pdfjsLib.getDocument(source).promise.then(function(pdf) {-->
+<!--            pdfDocument = pdf;-->
+<!--            totalPages = pdf.numPages;-->
+<!--            currentPage = 1;-->
+
+<!--            showSuccess(`PDF加载成功！共 ${totalPages} 页`);-->
+<!--            setTimeout(() => {-->
+<!--                renderPage(currentPage);-->
+<!--            }, 500);-->
+<!--        }).catch(function(error) {-->
+<!--            console.error('加载PDF失败:', error);-->
+<!--            showError(`加载${sourceType}PDF失败: ${error.message}`);-->
+<!--        });-->
+<!--    }-->
+
+<!--    // 全局函数：加载本地PDF-->
+<!--    window.loadLocalPdf = function() {-->
+<!--        const fileInput = document.getElementById('file-input');-->
+<!--        const file = fileInput.files[0];-->
+
+<!--        if (!file) {-->
+<!--            showError('请先选择一个PDF文件');-->
+<!--            return;-->
+<!--        }-->
+
+<!--        if (file.type !== 'application/pdf') {-->
+<!--            showError('请选择PDF文件');-->
+<!--            return;-->
+<!--        }-->
+
+<!--        const fileReader = new FileReader();-->
+<!--        fileReader.onload = function() {-->
+<!--            const typedArray = new Uint8Array(this.result);-->
+<!--            loadPdfDocument(typedArray, '本地');-->
+<!--        };-->
+<!--        fileReader.readAsArrayBuffer(file);-->
+<!--    };-->
+
+<!--    // 全局函数：加载在线PDF-->
+<!--    window.loadOnlinePdf = function() {-->
+<!--        const urlInput = document.getElementById('url-input');-->
+<!--        const pdfUrl = urlInput.value.trim();-->
+
+<!--        if (!pdfUrl) {-->
+<!--            showError('请输入PDF URL');-->
+<!--            return;-->
+<!--        }-->
+
+<!--        // 直接尝试加载（如果同源或服务器支持CORS）-->
+<!--        loadPdfDocument(pdfUrl, '在线');-->
+<!--    };-->
+
+<!--    // 全局函数：加载测试PDF-->
+<!--    window.loadTestPdf = function() {-->
+<!--        // 使用一个公开的测试PDF-->
+<!--        const testUrl = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';-->
+<!--        loadPdfDocument(testUrl, '测试');-->
+<!--    };-->
+
+<!--    // 全局函数：上一页-->
+<!--    window.prevPage = function() {-->
+<!--        if (currentPage > 1) {-->
+<!--            currentPage&#45;&#45;;-->
+<!--            renderPage(currentPage);-->
+<!--        }-->
+<!--    };-->
+
+<!--    // 全局函数：下一页-->
+<!--    window.nextPage = function() {-->
+<!--        if (currentPage < totalPages) {-->
+<!--            currentPage++;-->
+<!--            renderPage(currentPage);-->
+<!--        }-->
+<!--    };-->
+
+<!--    // 键盘导航-->
+<!--    document.addEventListener('keydown', function(e) {-->
+<!--        if (!pdfDocument) return;-->
+
+<!--        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {-->
+<!--            e.preventDefault();-->
+<!--            window.prevPage();-->
+<!--        } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {-->
+<!--            e.preventDefault();-->
+<!--            window.nextPage();-->
+<!--        }-->
+<!--    });-->
+
+<!--    // 页面加载完成提示-->
+<!--    window.addEventListener('load', function() {-->
+<!--        console.log('PDF.js 查看器已准备就绪');-->
+<!--        loadingMessage.textContent = '请选择要加载的PDF文件（支持本地文件和在线URL）';-->
+<!--    });-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PDF.js 本地和在线PDF测试</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        #pdf-canvas {
+            border: 1px solid #ddd;
+            margin-top: 15px;
+            max-width: 100%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        #loading-message {
+            color: #666;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        .error { color: #e74c3c !important; }
+        .success { color: #27ae60 !important; }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover { background: #2980b9; }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        input[type="file"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .page-info {
+            margin: 10px 0;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .url-input {
+            width: 100%;
+            max-width: 500px;
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>PDF.js 本地和在线PDF查看器</h1>
+
+    <div class="controls">
+        <input type="file" id="file-input" accept=".pdf" />
+        <button onclick="loadLocalPdf()">加载本地PDF</button>
+    </div>
+
+    <div class="controls">
+        <input type="text" id="url-input" class="url-input"
+               value="https://inv.alicdn.com/cb/OSTB_3248442096MM7a0k0flyjIYFf.pdf"
+               placeholder="输入PDF URL"/>
+        <button onclick="loadOnlinePdf()">加载在线PDF</button>
+    </div>
+
+    <div class="controls">
+        <button onclick="loadTestPdf()">加载服务器PDF</button>
+        <button onclick="loadServerPdf()">加载发票PDF</button>
+        <button onclick="prevPage()" id="prev-btn" disabled>上一页</button>
+        <button onclick="nextPage()" id="next-btn" disabled>下一页</button>
+    </div>
+
+    <div id="loading-message">请选择要加载的PDF文件</div>
+    <div id="page-info" class="page-info" style="display: none;"></div>
+
+    <div>
+        <canvas id="pdf-canvas" style="display: none;"></canvas>
+    </div>
+</div>
+
+<script type="module">
+    // 修正PDF.js路径 - 根据您的文件结构调整
+    import * as pdfjsLib from './assets/js/pdfjs/build/pdf.mjs';
+
+    // 设置worker路径
+    pdfjsLib.GlobalWorkerOptions.workerSrc = './assets/js/pdfjs/build/pdf.worker.mjs';
+
+    let pdfDocument = null;
+    let currentPage = 1;
+    let totalPages = 0;
+
+    const canvas = document.getElementById('pdf-canvas');
+    const context = canvas.getContext('2d');
+    const loadingMessage = document.getElementById('loading-message');
+    const pageInfo = document.getElementById('page-info');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    // 渲染指定页面
+    function renderPage(pageNum) {
+        loadingMessage.textContent = `正在渲染第 ${pageNum} 页...`;
+        loadingMessage.className = '';
+
+        pdfDocument.getPage(pageNum).then(function(page) {
+            const viewport = page.getViewport({ scale: 1.5 });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            canvas.style.display = 'block';
+
+            const renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+
+            return page.render(renderContext).promise;
+        }).then(function() {
+            loadingMessage.style.display = 'none';
+            pageInfo.textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
+            pageInfo.style.display = 'block';
+            updateNavigationButtons();
+        }).catch(function(error) {
+            console.error('渲染页面失败:', error);
+            showError('渲染页面失败: ' + error.message);
+        });
+    }
+
+    // 更新导航按钮状态
+    function updateNavigationButtons() {
+        prevBtn.disabled = currentPage <= 1;
+        nextBtn.disabled = currentPage >= totalPages;
+    }
+
+    // 显示错误信息
+    function showError(message) {
+        loadingMessage.textContent = message;
+        loadingMessage.className = 'error';
+        loadingMessage.style.display = 'block';
+        canvas.style.display = 'none';
+        pageInfo.style.display = 'none';
+    }
+
+    // 显示成功信息
+    function showSuccess(message) {
+        loadingMessage.textContent = message;
+        loadingMessage.className = 'success';
+    }
+
+    // 加载PDF文档
+    function loadPdfDocument(source, sourceType) {
+        showSuccess(`正在加载${sourceType}PDF...`);
+        canvas.style.display = 'none';
+        pageInfo.style.display = 'none';
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+
+        pdfjsLib.getDocument(source).promise.then(function(pdf) {
+            pdfDocument = pdf;
+            totalPages = pdf.numPages;
+            currentPage = 1;
+
+            showSuccess(`PDF加载成功！共 ${totalPages} 页`);
+            setTimeout(() => {
+                renderPage(currentPage);
+            }, 500);
+        }).catch(function(error) {
+            console.error('加载PDF失败:', error);
+            showError(`加载${sourceType}PDF失败: ${error.message}`);
+        });
+    }
+
+    // 全局函数：加载本地PDF
+    window.loadLocalPdf = function() {
+        const fileInput = document.getElementById('file-input');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            showError('请先选择一个PDF文件');
+            return;
+        }
+
+        if (file.type !== 'application/pdf') {
+            showError('请选择PDF文件');
+            return;
+        }
+
+        const fileReader = new FileReader();
+        fileReader.onload = function() {
+            const typedArray = new Uint8Array(this.result);
+            loadPdfDocument(typedArray, '本地');
+        };
+        fileReader.readAsArrayBuffer(file);
+    };
+
+    // 全局函数：加载在线PDF（通过PHP代理）
+    window.loadOnlinePdf = function() {
+        const urlInput = document.getElementById('url-input');
+        const pdfUrl = urlInput.value.trim();
+
+        if (!pdfUrl) {
+            showError('请输入PDF URL');
+            return;
+        }
+
+        // 使用PHP代理加载外部PDF
+        const proxyUrl = `./pdf_proxy.php?url=${encodeURIComponent(pdfUrl)}`;
+        loadPdfDocument(proxyUrl, '在线');
+    };
+
+    // 全局函数：加载服务器本地PDF
+    window.loadTestPdf = function() {
+        // 通过PHP脚本安全地加载服务器上的PDF文件
+        const localPdfUrl = './local_pdf.php?file=invoice';
+        loadPdfDocument(localPdfUrl, '服务器本地');
+    };
+
+    // 新增：加载指定服务器PDF文件
+    window.loadServerPdf = function() {
+        // 直接访问public目录下的PDF文件
+        const directPdfUrl = './local_invoice.pdf';
+        loadPdfDocument(directPdfUrl, '直接访问PDF');
+    };
+
+    // 全局函数：上一页
+    window.prevPage = function() {
+        if (currentPage > 1) {
+            currentPage--;
+            renderPage(currentPage);
+        }
+    };
+
+    // 全局函数：下一页
+    window.nextPage = function() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderPage(currentPage);
+        }
+    };
+
+    // 键盘导航
+    document.addEventListener('keydown', function(e) {
+        if (!pdfDocument) return;
+
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            window.prevPage();
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            window.nextPage();
+        }
+    });
+
+    // 页面加载完成提示
+    window.addEventListener('load', function() {
+        console.log('PDF.js 查看器已准备就绪');
+        loadingMessage.textContent = '请选择要加载的PDF文件（支持本地文件和在线URL）';
+    });
+</script>
+</body>
+</html>
