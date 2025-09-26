@@ -25,10 +25,11 @@ define(['jquery', 'bootstrap', 'backend', 'table', 'form'], function ($, undefin
                 sortName: 'id',
                 fixedColumns: true,
                 fixedRightNumber: 1,
+                sortOrder: 'asc',
                 columns: [
                     [
                         {checkbox: true},
-                        {field: 'id', title: __('Id')},
+                        {field: 'id', title: __('Id'),visible:false},
                         {field: 'store_name', title: __('Store_name'), operate: 'LIKE'},
                         {field: 'platform_order_id', title: __('Platform_order_id'), operate: 'LIKE'},
                         {field: 'merchant_order_id', title: __('Merchant_order_id'), operate: 'LIKE'},
@@ -137,6 +138,22 @@ define(['jquery', 'bootstrap', 'backend', 'table', 'form'], function ($, undefin
                         {field: 'recipient_address', title: __('Recipient_address'), operate: 'LIKE', table: table, class: 'autocontent', formatter: Table.api.formatter.content},
                         {field: 'delivery_time', title: __('Delivery_time'), operate:'RANGE', addclass:'datetimerange', autocomplete:false},
                         {field: 'verification_status', title: __('Verification_status'), searchList: {"Success":__('Success'),"Failure":__('Failure')}, formatter: Table.api.formatter.status},
+                        {field: 'verification_result', title: __('Verification_result'),
+                            buttons:[
+                                {
+                                    name: 'sn_ocr',
+                                    title: __('校验结果报告'),
+                                    classname: 'btn btn-xs btn-primary btn-dialog',
+                                    icon: 'fa fa-list',
+                                    url: 'threec_product/report',
+                                    callback: function (data) {
+                                        Layer.alert("接收到回传数据：" + JSON.stringify(data), {title: "回传数据"});
+                                    }
+                                },
+                            ],
+                            table: table, formatter: Table.api.formatter.operate,
+
+                        },
                         // {field: 'operate', title: __('Operate'), table: table,events: Table.api.events.operate, formatter: Table.api.formatter.operate}
                     ]
                 ]
@@ -158,30 +175,30 @@ define(['jquery', 'bootstrap', 'backend', 'table', 'form'], function ($, undefin
         }
     };
     //fast已经帮助我们引入了layer并暴露在window对象上
-    $(document).on("click", "#sn-image-native", function () {
-        // 1. 直接从被点击的图片(`this`)的 `src` 属性获取URL
-        var imageUrl = $(this).attr('src');
-
-        // 2. 确保我们成功获取到了URL
-        if (!imageUrl) {
-            console.error("无法获取图片URL!");
-            return;
-        }
-
-        // 3. 调用Layer.photos，数据源直接使用我们获取到的URL
-        //    就像您代码注释里提到的，使用 window.top.Layer 可以确保弹窗在最外层打开
-        var Layer = window.top.Layer || window.Layer;
-        Layer.photos({
-            photos: {
-                "start": 0, // 因为只有一张图，所以从第一张（索引0）开始
-                "data": [
-                    {
-                        "src": imageUrl
-                    }
-                ]
-            },
-            anim: 5 // 指定动画类型
-        });
-    });
+    // $(document).on("click", "#sn-image-native", function () {
+    //     // 1. 直接从被点击的图片(`this`)的 `src` 属性获取URL
+    //     var imageUrl = $(this).attr('src');
+    //
+    //     // 2. 确保我们成功获取到了URL
+    //     if (!imageUrl) {
+    //         console.error("无法获取图片URL!");
+    //         return;
+    //     }
+    //
+    //     // 3. 调用Layer.photos，数据源直接使用我们获取到的URL
+    //     //    就像您代码注释里提到的，使用 window.top.Layer 可以确保弹窗在最外层打开
+    //     var Layer = window.top.Layer || window.Layer;
+    //     Layer.photos({
+    //         photos: {
+    //             "start": 0, // 因为只有一张图，所以从第一张（索引0）开始
+    //             "data": [
+    //                 {
+    //                     "src": imageUrl
+    //                 }
+    //             ]
+    //         },
+    //         anim: 5 // 指定动画类型
+    //     });
+    // });
     return Controller;
 });

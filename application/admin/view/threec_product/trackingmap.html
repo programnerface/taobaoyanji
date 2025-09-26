@@ -1,0 +1,670 @@
+<style>
+  /* 1. 弹窗的黑色半透明背景 */
+  #image-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* 确保在最上层 */
+  }
+
+  /* 2. 弹窗中放大的图片 */
+  #image-popup-overlay img {
+    max-width: 90%;
+    max-height: 90%;
+    border: 3px solid white;
+    border-radius: 5px;
+  }
+  th, td {
+    white-space: nowrap; /* 不换行 */
+  }
+</style>
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-xs-6">
+      <h3 class="text-center">{$title|htmlentities}</h3>
+      <canvas id="pdf-canvas" data-file-url="{$file_url|htmlentities}" style="border:1px solid #ddd; width:100%;"></canvas>
+
+    </div>
+
+    <div class="col-xs-6">
+      <h3 class="text-center">识别结果</h3>
+      <table class="table table-striped table-bordered">
+        <thead>
+        <!--                <tr><th style="width:100px;">Key</th><th>Value</th></tr>-->
+        <tr>
+          <th style="width:100px;">校验字段</th>
+          <th>OCR识别结果</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr><td>物流单号</td><td>{$row.tracking_number|default='N/A'}</td></tr>
+        <tr><td>收货省</td><td>{$row.recipient_province|default='N/A'}</td></tr>
+        <tr><td>收货地址</td><td>{$row.recipient_address|default='N/A'}</td></tr>
+        <tr><td>签收时间</td><td>{$row.delivery_time|default='N/A'}</td></tr>
+
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</div>
+
+<!--<script type="module">-->
+<!--    // 1. 从我们已经确认可用的路径加载-->
+<!--    import * as pdfjsLib from '/assets/js/pdfjs/build/pdf.mjs';-->
+
+<!--    // 2. 设置 worker 路径-->
+<!--    pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/js/pdfjs/build/pdf.worker.mjs';-->
+
+<!--    const canvas = document.getElementById('pdf-canvas');-->
+<!--    const originalPdfUrl = canvas.dataset.fileUrl;-->
+<!--    const context = canvas.getContext('2d');-->
+<!--    const pdfProxyUrl = `{:url('threec_product/proxy_pdf')}?url=${encodeURIComponent(originalPdfUrl)}`;-->
+
+<!--    // 3. 加载并渲染文档-->
+<!--    pdfjsLib.getDocument(pdfProxyUrl).promise.then(function(pdf) {-->
+<!--        return pdf.getPage(1);-->
+<!--    }).then(function(page) {-->
+<!--        // -&#45;&#45; 并行操作：同时渲染页面并提取文本 -&#45;&#45;-->
+<!--        const viewport = page.getViewport({ scale: 2.0 });-->
+<!--        canvas.height = viewport.height;-->
+<!--        canvas.width = viewport.width;-->
+
+<!--        // a. 渲染页面-->
+<!--        page.render({ canvasContext: context, viewport: viewport });-->
+
+<!--        // b. 提取文本内容-->
+<!--        return page.getTextContent();-->
+
+<!--    }).then(function(textContent) {-->
+<!--        const allItems = textContent.items;-->
+
+<!--        // -&#45;&#45; 1. 打印您需要的原始数据日志 -&#45;&#45;-->
+<!--        console.log("-&#45;&#45; 1. 原始文本及坐标信息 -&#45;&#45;");-->
+<!--        const allItemsWithCoords = allItems.map(item => ({-->
+<!--            text: item.str,-->
+<!--            x: Math.round(item.transform[4]),-->
+<!--            y: Math.round(item.transform[5])-->
+<!--        }));-->
+<!--        console.table(allItemsWithCoords);-->
+<!--        // -&#45;&#45; 日志结束 -&#45;&#45;-->
+
+<!--        // -&#45;&#45; 2. 横向解析：发票号码和开票日期 -&#45;&#45;-->
+<!--        const invoiceNumberLine = allItems.filter(item => item.transform[5] > 350 && item.transform[5] < 360).map(item => item.str).join('');-->
+<!--        const invoiceDateLine = allItems.filter(item => item.transform[5] > 330 && item.transform[5] < 340).map(item => item.str).join('');-->
+<!--        let invoiceNumber = invoiceNumberLine.match(/发票号码[:：](.+)/)?.[1] || '';-->
+<!--        let invoiceDate = invoiceDateLine.match(/开票日期[:：](.+)/)?.[1] || '';-->
+
+<!--        // -&#45;&#45; 3. 横向解析：购买方和销售方 -&#45;&#45;-->
+<!--        const partyItems = allItems.filter(item => item.transform[5] > 250 && item.transform[5] < 300);-->
+<!--        // 使用您认为最准确的逻辑-->
+<!--        let fullBuyerText = partyItems.filter(item => item.transform[4] < 300).map(item => item.str).join('');-->
+<!--        let buyerNameMatch = fullBuyerText.match(/名称[:：](.+)/);-->
+<!--        let buyerName = buyerNameMatch ? buyerNameMatch[1].split('统一社会')[0].trim() : '';-->
+
+<!--        let fullSellerText = partyItems.filter(item => item.transform[4] > 300).map(item => item.str).join('');-->
+<!--        let sellerNameMatch = fullSellerText.match(/名称[:：](.+)/);-->
+<!--        let sellerName = sellerNameMatch ? sellerNameMatch[1].split('统一社会')[0].trim() : '';-->
+
+
+<!--        // -&#45;&#45; 4. 纵向解析：项目名称和规格型号 -&#45;&#45;-->
+<!--        const itemBodyItems = allItems.filter(item => item.transform[5] > 150 && item.transform[5] < 230);-->
+<!--        let itemName = itemBodyItems.filter(item => item.transform[4] < 110).sort((a, b) => b.transform[5] - a.transform[5]).map(item => item.str).join(' ').trim();-->
+<!--        let itemModel = itemBodyItems.filter(item => item.transform[4] > 110 && item.transform[4] < 180).sort((a, b) => b.transform[5] - a.transform[5]).map(item => item.str).join(' ').trim();-->
+
+<!--        // -&#45;&#45; 5. 横向解析：备注和合计金额 -&#45;&#45;-->
+<!--        const remarksText = allItems.filter(item => item.transform[5] > 60 && item.transform[5] < 100).map(item => item.str).join('');-->
+<!--        const totalAmountText = allItems.filter(item => item.transform[5] > 100 && item.transform[5] < 110).map(item => item.str).join('');-->
+
+<!--        let taobaoOrderId = remarksText.match(/淘宝订单号[:：](\d+)/)?.[1] || '未找到';-->
+<!--        let alipayOrderId = remarksText.match(/支付宝订单号[:：](\d+)/)?.[1] || '未找到';-->
+<!--        let subsidyAmount = remarksText.match(/政府补贴金额[:：]([\d.]+)/)?.[1] || '未找到';-->
+<!--        let paidAmount = remarksText.match(/实付金额[:：]([\d.]+)/)?.[1] || '未找到';-->
+<!--        let totalAmount = totalAmountText.match(/（小写）¥?([\d.]+)/)?.[1] || '未找到';-->
+
+<!--        // -&#45;&#45; 6. 整合并打印最终结果 -&#45;&#45;-->
+<!--        const structuredResult = {-->
+<!--            '销售方名称': sellerName,-->
+<!--            '购买方名称': buyerName,-->
+<!--            '项目名称': itemName,-->
+<!--            '规格型号': itemModel,-->
+<!--            '淘宝订单号': taobaoOrderId,-->
+<!--            '支付宝订单号': alipayOrderId,-->
+<!--            '开票日期': invoiceDate,-->
+<!--            '发票号码': invoiceNumber,-->
+<!--            '政府补贴金额': subsidyAmount,-->
+<!--            '实付金额': paidAmount,-->
+<!--            '价税合计金额': totalAmount,-->
+<!--            '旧机回收金额': '未找到'-->
+<!--        };-->
+
+<!--        console.log("-&#45;&#45; 2. 结构化解析结果 -&#45;&#45;");-->
+<!--        console.table(structuredResult);-->
+
+<!--    }).then(function() {-->
+<!--        // -&#45;&#45; 为canvas绑定点击放大事件 -&#45;&#45;-->
+<!--        if (window.parent && window.parent.Layer && window.parent.$) {-->
+<!--            const Layer = window.parent.Layer;-->
+<!--            const $ = window.parent.$;-->
+
+<!--            canvas.addEventListener('click', function () {-->
+<!--                // -&#45;&#45; 核心改动：获取当前弹窗的z-index并加1 -&#45;&#45;-->
+<!--                const parentLayer = $(canvas).closest('.layui-layer');-->
+
+<!--                // -&#45;&#45; 修改结束 -&#45;&#45;-->
+
+<!--                Layer.photos({-->
+<!--                    photos: {-->
+<!--                        "data": [{-->
+<!--                            "src": canvas.toDataURL("image/png")-->
+<!--                        }],-->
+
+<!--                    },-->
+<!--                    zIndex: 99999999-->
+<!--                });-->
+<!--            });-->
+<!--        }-->
+<!--    });-->
+<!--</script>-->
+
+
+<!--<script type="module">-->
+<!--  // 1. 从我们已经确认可用的路径加载-->
+<!--  import * as pdfjsLib from '/assets/js/pdfjs/build/pdf.mjs';-->
+
+<!--  // 2. 设置 worker 路径-->
+<!--  pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/js/pdfjs/build/pdf.worker.mjs';-->
+
+<!--  const canvas = document.getElementById('pdf-canvas');-->
+<!--  const originalPdfUrl = canvas.dataset.fileUrl;-->
+<!--  const context = canvas.getContext('2d');-->
+<!--  const pdfProxyUrl = `{:url('threec_product/proxy_pdf')}?url=${encodeURIComponent(originalPdfUrl)}`;-->
+<!--  // const pdfProxyUrl = 'http://www.taobaoyanji.com/uploads/20250924/6952bbffa8e0f82f4351b5574acc91c6.pdf';-->
+
+<!--  // 3. 加载并渲染文档-->
+<!--  pdfjsLib.getDocument(pdfProxyUrl).promise.then(function(pdf) {-->
+<!--    return pdf.getPage(1);-->
+<!--  }).then(function(page) {-->
+<!--    const viewport = page.getViewport({ scale: 2.0 });-->
+<!--    canvas.height = viewport.height;-->
+<!--    canvas.width = viewport.width;-->
+
+<!--    // a. 渲染页面-->
+<!--    // b. .promise 确保在渲染完成后再执行下一步-->
+<!--    return page.render({ canvasContext: context, viewport: viewport }).promise;-->
+
+<!--  }).then(function() {-->
+<!--    // 4. 渲染成功后，为canvas绑定点击放大事件-->
+<!--    if (window.parent && window.parent.Layer) {-->
+<!--      const Layer = window.parent.Layer;-->
+<!--      const $ = window.parent.$;-->
+
+<!--      canvas.addEventListener('click', function () {-->
+<!--        // 获取当前所有layer的最大z-index-->
+<!--        let maxZIndex = 0;-->
+<!--        $('.layui-layer', window.parent.document).each(function() {-->
+<!--          const zIndex = parseInt($(this).css('z-index')) || 0;-->
+<!--          if (zIndex > maxZIndex) {-->
+<!--            maxZIndex = zIndex;-->
+<!--          }-->
+<!--        });-->
+
+<!--        // 设置更高的z-index-->
+<!--        const photoZIndex = Math.max(maxZIndex + 100, 99999999);-->
+
+<!--        Layer.photos({-->
+<!--          photos: {-->
+<!--            "data": [{-->
+<!--              "src": canvas.toDataURL("image/png", 1.0)-->
+<!--            }]-->
+<!--          },-->
+<!--          zIndex: photoZIndex,-->
+<!--          shade: [0.3, '#393D49'],-->
+<!--          shadeClose: true,-->
+<!--          closeBtn: 1, // 显示关闭按钮-->
+<!--          anim: 0, // 弹出动画-->
+<!--          isOutAnim: true, // 关闭动画-->
+<!--        });-->
+<!--      });-->
+<!--    }-->
+
+<!--  });-->
+<!--</script>-->
+
+
+<!--<script type="module">-->
+<!--  // 1. 从我们已经确认可用的路径加载-->
+<!--  import * as pdfjsLib from '/assets/js/pdfjs/build/pdf.mjs';-->
+
+<!--  // 2. 设置 worker 路径-->
+<!--  pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/js/pdfjs/build/pdf.worker.mjs';-->
+
+<!--  const canvas = document.getElementById('pdf-canvas');-->
+<!--  const originalPdfUrl = canvas.dataset.fileUrl;-->
+<!--  const context = canvas.getContext('2d');-->
+
+<!--  console.log('原始PDF URL:', originalPdfUrl);-->
+
+<!--  // 多种PDF加载策略-->
+<!--  class PDFLoader {-->
+<!--    constructor(canvas, originalUrl) {-->
+<!--      this.canvas = canvas;-->
+<!--      this.context = canvas.getContext('2d');-->
+<!--      this.originalUrl = originalUrl;-->
+<!--      this.strategies = [-->
+<!--        this.loadWithFetch.bind(this),-->
+<!--        this.loadWithXHR.bind(this),-->
+<!--        this.loadWithProxy.bind(this),-->
+<!--        this.loadDirect.bind(this)-->
+<!--      ];-->
+<!--    }-->
+
+<!--    async load() {-->
+<!--      for (let i = 0; i < this.strategies.length; i++) {-->
+<!--        const strategyName = this.strategies[i].name;-->
+<!--        console.log(`尝试策略 ${i + 1}: ${strategyName}`);-->
+
+<!--        try {-->
+<!--          await this.strategies[i]();-->
+<!--          console.log(`策略 ${strategyName} 成功!`);-->
+<!--          this.setupCanvasClickHandler();-->
+<!--          return;-->
+<!--        } catch (error) {-->
+<!--          console.error(`策略 ${strategyName} 失败:`, error);-->
+<!--          if (i === this.strategies.length - 1) {-->
+<!--            this.showError(`所有加载策略都失败了。最后错误: ${error.message}`);-->
+<!--          }-->
+<!--        }-->
+<!--      }-->
+<!--    }-->
+
+<!--    // 策略1: 使用fetch获取PDF数据然后转换为ArrayBuffer-->
+<!--    async loadWithFetch() {-->
+<!--      console.log('使用fetch策略加载PDF...');-->
+
+<!--      // 首先尝试直接fetch原始URL-->
+<!--      const response = await fetch(this.originalUrl, {-->
+<!--        method: 'GET',-->
+<!--        headers: {-->
+<!--          'Accept': 'application/pdf,*/*',-->
+<!--          'Cache-Control': 'no-cache'-->
+<!--        },-->
+<!--        mode: 'cors' // 明确指定CORS模式-->
+<!--      });-->
+
+<!--      if (!response.ok) {-->
+<!--        throw new Error(`HTTP ${response.status}: ${response.statusText}`);-->
+<!--      }-->
+
+<!--      const arrayBuffer = await response.arrayBuffer();-->
+
+<!--      if (arrayBuffer.byteLength === 0) {-->
+<!--        throw new Error('获取的PDF文件为空');-->
+<!--      }-->
+
+<!--      // 验证PDF头-->
+<!--      const uint8Array = new Uint8Array(arrayBuffer);-->
+<!--      const header = String.fromCharCode.apply(null, uint8Array.slice(0, 4));-->
+<!--      if (header !== '%PDF') {-->
+<!--        throw new Error(`无效的PDF文件头: ${header}`);-->
+<!--      }-->
+
+<!--      console.log('PDF文件验证成功, 大小:', arrayBuffer.byteLength);-->
+
+<!--      // 使用ArrayBuffer加载PDF-->
+<!--      const pdf = await pdfjsLib.getDocument({-->
+<!--        data: arrayBuffer,-->
+<!--        verbosity: pdfjsLib.VerbosityLevel.ERRORS-->
+<!--      }).promise;-->
+
+<!--      await this.renderPDF(pdf);-->
+<!--    }-->
+
+<!--    // 策略2: 使用XMLHttpRequest获取PDF数据-->
+<!--    async loadWithXHR() {-->
+<!--      console.log('使用XMLHttpRequest策略加载PDF...');-->
+
+<!--      return new Promise((resolve, reject) => {-->
+<!--        const xhr = new XMLHttpRequest();-->
+<!--        xhr.open('GET', this.originalUrl, true);-->
+<!--        xhr.responseType = 'arraybuffer';-->
+
+<!--        xhr.onload = async () => {-->
+<!--          try {-->
+<!--            if (xhr.status !== 200) {-->
+<!--              throw new Error(`HTTP ${xhr.status}`);-->
+<!--            }-->
+
+<!--            const arrayBuffer = xhr.response;-->
+<!--            if (!arrayBuffer || arrayBuffer.byteLength === 0) {-->
+<!--              throw new Error('获取的PDF文件为空');-->
+<!--            }-->
+
+<!--            // 验证PDF头-->
+<!--            const uint8Array = new Uint8Array(arrayBuffer);-->
+<!--            const header = String.fromCharCode.apply(null, uint8Array.slice(0, 4));-->
+<!--            if (header !== '%PDF') {-->
+<!--              throw new Error(`无效的PDF文件头: ${header}`);-->
+<!--            }-->
+
+<!--            console.log('XHR PDF文件验证成功, 大小:', arrayBuffer.byteLength);-->
+
+<!--            const pdf = await pdfjsLib.getDocument({-->
+<!--              data: arrayBuffer,-->
+<!--              verbosity: pdfjsLib.VerbosityLevel.ERRORS-->
+<!--            }).promise;-->
+
+<!--            await this.renderPDF(pdf);-->
+<!--            resolve();-->
+<!--          } catch (error) {-->
+<!--            reject(error);-->
+<!--          }-->
+<!--        };-->
+
+<!--        xhr.onerror = () => {-->
+<!--          reject(new Error('XMLHttpRequest网络错误'));-->
+<!--        };-->
+
+<!--        xhr.ontimeout = () => {-->
+<!--          reject(new Error('XMLHttpRequest超时'));-->
+<!--        };-->
+
+<!--        xhr.timeout = 30000; // 30秒超时-->
+<!--        xhr.send();-->
+<!--      });-->
+<!--    }-->
+
+<!--    // 策略3: 使用代理URL-->
+<!--    async loadWithProxy() {-->
+<!--      console.log('使用代理策略加载PDF...');-->
+
+<!--      const pdfProxyUrl = `{:url('threec_product/proxy_pdf')}?url=${encodeURIComponent(this.originalUrl)}`;-->
+<!--      console.log('代理URL:', pdfProxyUrl);-->
+
+<!--      const response = await fetch(pdfProxyUrl, {-->
+<!--        method: 'GET',-->
+<!--        headers: {-->
+<!--          'Accept': 'application/pdf,*/*',-->
+<!--          'Cache-Control': 'no-cache'-->
+<!--        }-->
+<!--      });-->
+
+<!--      if (!response.ok) {-->
+<!--        throw new Error(`代理服务器返回: HTTP ${response.status}`);-->
+<!--      }-->
+
+<!--      const arrayBuffer = await response.arrayBuffer();-->
+
+<!--      if (arrayBuffer.byteLength === 0) {-->
+<!--        throw new Error('代理返回的PDF文件为空');-->
+<!--      }-->
+
+<!--      // 验证PDF头-->
+<!--      const uint8Array = new Uint8Array(arrayBuffer);-->
+<!--      const header = String.fromCharCode.apply(null, uint8Array.slice(0, 4));-->
+<!--      if (header !== '%PDF') {-->
+<!--        throw new Error(`代理返回无效PDF: ${header}`);-->
+<!--      }-->
+
+<!--      const pdf = await pdfjsLib.getDocument({-->
+<!--        data: arrayBuffer,-->
+<!--        verbosity: pdfjsLib.VerbosityLevel.ERRORS-->
+<!--      }).promise;-->
+
+<!--      await this.renderPDF(pdf);-->
+<!--    }-->
+
+<!--    // 策略4: 直接使用URL加载（最后的尝试）-->
+<!--    async loadDirect() {-->
+<!--      console.log('使用直接URL策略加载PDF...');-->
+
+<!--      const pdf = await pdfjsLib.getDocument({-->
+<!--        url: this.originalUrl,-->
+<!--        verbosity: pdfjsLib.VerbosityLevel.ERRORS,-->
+<!--        httpHeaders: {-->
+<!--          'Accept': 'application/pdf',-->
+<!--        },-->
+<!--        withCredentials: false-->
+<!--      }).promise;-->
+
+<!--      await this.renderPDF(pdf);-->
+<!--    }-->
+
+<!--    // 渲染PDF到canvas-->
+<!--    async renderPDF(pdf) {-->
+<!--      console.log('开始渲染PDF, 总页数:', pdf.numPages);-->
+
+<!--      const page = await pdf.getPage(1);-->
+
+<!--      // 计算合适的缩放比例-->
+<!--      const containerWidth = this.canvas.parentElement.clientWidth;-->
+<!--      const viewport = page.getViewport({ scale: 1.0 });-->
+<!--      let scale = containerWidth / viewport.width;-->
+
+<!--      // 限制缩放比例在合理范围内-->
+<!--      scale = Math.min(Math.max(scale, 0.5), 3.0);-->
+
+<!--      const scaledViewport = page.getViewport({ scale: scale });-->
+
+<!--      // 设置canvas尺寸-->
+<!--      this.canvas.height = scaledViewport.height;-->
+<!--      this.canvas.width = scaledViewport.width;-->
+
+<!--      // 清除canvas-->
+<!--      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);-->
+
+<!--      console.log(`渲染设置: scale=${scale}, size=${this.canvas.width}x${this.canvas.height}`);-->
+
+<!--      // 渲染页面-->
+<!--      const renderContext = {-->
+<!--        canvasContext: this.context,-->
+<!--        viewport: scaledViewport,-->
+<!--        // 添加这些选项以提高渲染质量-->
+<!--        intent: 'display'-->
+<!--      };-->
+
+<!--      await page.render(renderContext).promise;-->
+<!--      console.log('PDF渲染完成');-->
+<!--    }-->
+
+<!--    // 显示错误信息-->
+<!--    showError(message) {-->
+<!--      console.error('PDF加载完全失败:', message);-->
+
+<!--      // 在canvas上显示错误信息-->
+<!--      this.context.fillStyle = '#ffffff';-->
+<!--      this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);-->
+
+<!--      this.context.fillStyle = '#ff0000';-->
+<!--      this.context.font = '16px Arial';-->
+<!--      this.context.textAlign = 'center';-->
+<!--      this.context.fillText('PDF加载失败', this.canvas.width / 2, this.canvas.height / 2 - 20);-->
+
+<!--      this.context.font = '12px Arial';-->
+<!--      this.context.fillStyle = '#666666';-->
+<!--      const lines = this.wrapText(message, this.canvas.width - 40);-->
+<!--      lines.forEach((line, index) => {-->
+<!--        this.context.fillText(line, this.canvas.width / 2, this.canvas.height / 2 + 10 + (index * 15));-->
+<!--      });-->
+<!--    }-->
+
+<!--    // 文本换行辅助函数-->
+<!--    wrapText(text, maxWidth) {-->
+<!--      const words = text.split(' ');-->
+<!--      const lines = [];-->
+<!--      let currentLine = '';-->
+
+<!--      for (let word of words) {-->
+<!--        const testLine = currentLine + word + ' ';-->
+<!--        const metrics = this.context.measureText(testLine);-->
+
+<!--        if (metrics.width > maxWidth && currentLine !== '') {-->
+<!--          lines.push(currentLine.trim());-->
+<!--          currentLine = word + ' ';-->
+<!--        } else {-->
+<!--          currentLine = testLine;-->
+<!--        }-->
+<!--      }-->
+
+<!--      if (currentLine) {-->
+<!--        lines.push(currentLine.trim());-->
+<!--      }-->
+
+<!--      return lines;-->
+<!--    }-->
+
+<!--    // 设置canvas点击放大功能-->
+<!--    setupCanvasClickHandler() {-->
+<!--      if (window.parent && window.parent.Layer) {-->
+<!--        const Layer = window.parent.Layer;-->
+<!--        const $ = window.parent.$;-->
+
+<!--        this.canvas.style.cursor = 'pointer';-->
+
+<!--        this.canvas.addEventListener('click', () => {-->
+<!--          // 获取当前所有layer的最大z-index-->
+<!--          let maxZIndex = 0;-->
+<!--          $('.layui-layer', window.parent.document).each(function() {-->
+<!--            const zIndex = parseInt($(this).css('z-index')) || 0;-->
+<!--            if (zIndex > maxZIndex) {-->
+<!--              maxZIndex = zIndex;-->
+<!--            }-->
+<!--          });-->
+
+<!--          // 设置更高的z-index-->
+<!--          const photoZIndex = Math.max(maxZIndex + 100, 99999999);-->
+
+<!--          Layer.photos({-->
+<!--            photos: {-->
+<!--              "data": [{-->
+<!--                "src": this.canvas.toDataURL("image/png", 1.0)-->
+<!--              }]-->
+<!--            },-->
+<!--            zIndex: photoZIndex,-->
+<!--            shade: [0.3, '#393D49'],-->
+<!--            shadeClose: true,-->
+<!--            closeBtn: 1,-->
+<!--            anim: 0,-->
+<!--            isOutAnim: true,-->
+<!--          });-->
+<!--        });-->
+
+<!--        console.log('Canvas点击放大功能已激活');-->
+<!--      } else {-->
+<!--        console.warn('未检测到Layer组件，点击放大功能不可用');-->
+<!--      }-->
+<!--    }-->
+<!--  }-->
+
+<!--  // 创建加载器并开始加载-->
+<!--  const loader = new PDFLoader(canvas, originalPdfUrl);-->
+
+<!--  // 添加加载指示器-->
+<!--  const showLoadingIndicator = () => {-->
+<!--    const ctx = canvas.getContext('2d');-->
+<!--    canvas.width = 400;-->
+<!--    canvas.height = 200;-->
+<!--    ctx.fillStyle = '#f5f5f5';-->
+<!--    ctx.fillRect(0, 0, canvas.width, canvas.height);-->
+<!--    ctx.fillStyle = '#333';-->
+<!--    ctx.font = '16px Arial';-->
+<!--    ctx.textAlign = 'center';-->
+<!--    ctx.fillText('正在加载PDF...', canvas.width / 2, canvas.height / 2);-->
+<!--  };-->
+
+<!--  showLoadingIndicator();-->
+
+<!--  // 启动加载过程-->
+<!--  loader.load().catch(error => {-->
+<!--    console.error('PDF加载器失败:', error);-->
+<!--  });-->
+
+<!--</script>-->
+
+
+<script type="module">
+  // 1. 从我们已经确认可用的路径加载
+  import * as pdfjsLib from '/assets/js/pdfjs/build/pdf.mjs';
+
+  // 2. 设置 worker 路径
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/js/pdfjs/build/pdf.worker.mjs';
+
+  const canvas = document.getElementById('pdf-canvas');
+  const originalPdfUrl = canvas.dataset.fileUrl;
+  const context = canvas.getContext('2d');
+  const pdfProxyUrl = `{:url('threec_product/proxy_pdf')}?url=${encodeURIComponent(originalPdfUrl)}`;
+  // new
+  let finalPdfUrl;
+
+  const parsedUrl = new URL(originalPdfUrl, window.location.href);
+  if (parsedUrl.protocol === "http:") {
+    // 判断是否同域
+    if (parsedUrl.hostname === window.location.hostname) {
+      finalPdfUrl = originalPdfUrl;
+    } else {
+      finalPdfUrl = pdfProxyUrl;
+    }
+  } else if (parsedUrl.protocol === "https:") {
+    finalPdfUrl = pdfProxyUrl;
+  } else {
+    // 兜底：默认走代理
+    finalPdfUrl = pdfProxyUrl;
+  }
+
+
+  // 3. 加载并渲染文档
+  pdfjsLib.getDocument(finalPdfUrl).promise.then(function(pdf) {
+    return pdf.getPage(1);
+  }).then(function(page) {
+    const viewport = page.getViewport({ scale: 2.0 });
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    // a. 渲染页面
+    // b. .promise 确保在渲染完成后再执行下一步
+    return page.render({ canvasContext: context, viewport: viewport }).promise;
+
+  }).then(function() {
+    // 4. 渲染成功后，为canvas绑定点击放大事件
+    if (window.parent && window.parent.Layer) {
+      const Layer = window.parent.Layer;
+      const $ = window.parent.$;
+
+      canvas.addEventListener('click', function () {
+        // 获取当前所有layer的最大z-index
+        let maxZIndex = 0;
+        $('.layui-layer', window.parent.document).each(function() {
+          const zIndex = parseInt($(this).css('z-index')) || 0;
+          if (zIndex > maxZIndex) {
+            maxZIndex = zIndex;
+          }
+        });
+
+        // 设置更高的z-index
+        const photoZIndex = Math.max(maxZIndex + 100, 99999999);
+
+        Layer.photos({
+          photos: {
+            "data": [{
+              "src": canvas.toDataURL("image/png", 1.0)
+            }]
+          },
+          zIndex: photoZIndex,
+          shade: [0.3, '#393D49'],
+          shadeClose: true,
+          closeBtn: 1, // 显示关闭按钮
+          anim: 0, // 弹出动画
+          isOutAnim: true, // 关闭动画
+        });
+      });
+    }
+
+  });
+</script>

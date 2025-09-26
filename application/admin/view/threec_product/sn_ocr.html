@@ -21,6 +21,9 @@
         border: 3px solid white;
         border-radius: 5px;
     }
+    th, td {
+        white-space: nowrap; /* 不换行 */
+    }
 </style>
 
 <div class="container-fluid">
@@ -28,57 +31,37 @@
         <div class="col-xs-6">
             <h3 class="text-center">{$title|htmlentities}</h3>
 <!--            <img id="sn-image-native" src="{$image_url|htmlentities}" alt="{$title|htmlentities}" style="max-width: 100%; cursor: pointer; border: 1px solid #ddd; padding: 4px; border-radius: 4px;">-->
-            {if $viewType == 'image'}
+<!--            {if $viewType == 'image'}-->
             <img id="sn-image-native" src="{$file_url|htmlentities}" alt="{$title|htmlentities}" style="max-width: 100%; cursor: pointer; border: 1px solid #ddd; padding: 4px; border-radius: 4px;">
-            {else /}
-            <canvas id="pdf-canvas" data-file-url="{$file_url|htmlentities}" style="border:1px solid #ddd; width:100%;"></canvas>
-            {/if}
+<!--            {else /}-->
+<!--            <canvas id="pdf-canvas" data-file-url="{$file_url|htmlentities}" style="border:1px solid #ddd; width:100%;"></canvas>-->
+<!--            {/if}-->
         </div>
 
         <div class="col-xs-6">
             <h3 class="text-center">识别结果</h3>
             <table class="table table-striped table-bordered">
                 <thead>
-                <tr><th style="width:100px;">Key</th><th>Value</th></tr>
+<!--                <tr><th style="width:100px;">Key</th><th>Value</th></tr>-->
+                <tr><th style="width:100px;">校验字段</th><th>OCR识别结果</th></tr>
                 </thead>
                 <tbody>
                 <tr><td>SN码</td><td>{$row.serial_number|default='N/A'}</td></tr>
+                <tr><td>69码</td><td>{$row.ean_code|default='N/A'}</td></tr>
                 <tr><td>IMEI1码</td><td>{$row.imei1|default='N/A'}</td></tr>
                 <tr><td>IMEI2码</td><td>{$row.imei2|default='N/A'}</td></tr>
-                <tr><td>商品型号</td><td>{$row.product_model|default='N/A'}</td></tr>
-                <tr><td>校验状态</td><td>{$row.verification_status|default='N/A'}</td></tr>
-                <tr><td>失败原因</td><td>{$row.verification_result|default='N/A'}</td></tr>
+<!--                <tr><td>商品型号</td><td>{$row.product_model|default='N/A'}</td></tr>-->
+<!--                <tr><td>校验状态</td><td>{$row.verification_status|default='N/A'}</td></tr>-->
+<!--                <tr><td>失败原因</td><td>{$row.verification_result|default='N/A'}</td></tr>-->
                 </tbody>
             </table>
+
         </div>
     </div>
 </div>
+
 <!--{if $viewType == 'pdf'}-->
-<!--<script type="module">-->
-<!--    import * as pdfjsLib from '/assets/js/pdfjs/build/pdf.mjs';-->
 
-<!--    pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/js/pdfjs/build/pdf.worker.mjs';-->
-
-<!--    const canvas = document.getElementById('pdf-canvas');-->
-
-<!--    // -&#45;&#45; 关键改动：从canvas的data属性中读取URL -&#45;&#45;-->
-<!--    const originalPdfUrl = canvas.dataset.fileUrl;-->
-<!--    // -&#45;&#45; 修改结束 -&#45;&#45;-->
-
-<!--    const pdfProxyUrl = `{:url('threec_product/proxy_pdf')}?url=${encodeURIComponent(originalPdfUrl)}`;-->
-<!--    const context = canvas.getContext('2d');-->
-
-<!--    pdfjsLib.getDocument(pdfProxyUrl).promise.then(function(pdf) {-->
-<!--        return pdf.getPage(1);-->
-<!--    }).then(function(page) {-->
-<!--        const viewport = page.getViewport({ scale: 2.0 });-->
-<!--        canvas.height = viewport.height;-->
-<!--        canvas.width = viewport.width;-->
-<!--        page.render({ canvasContext: context, viewport: viewport });-->
-<!--    });-->
-<!--</script>-->
-<!--{/if}-->
-{if $viewType == 'pdf'}
 <!--<script type="module">-->
 <!--    // 1. 从我们已经确认可用的路径加载-->
 <!--    import * as pdfjsLib from '/assets/js/pdfjs/build/pdf.mjs';-->
@@ -87,133 +70,197 @@
 <!--    pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/js/pdfjs/build/pdf.worker.mjs';-->
 
 <!--    const canvas = document.getElementById('pdf-canvas');-->
-<!--    // 3. 从canvas的data属性中安全地读取URL-->
 <!--    const originalPdfUrl = canvas.dataset.fileUrl;-->
 <!--    const context = canvas.getContext('2d');-->
-
-<!--    // 4. 构建指向我们自己PHP代理的URL-->
 <!--    const pdfProxyUrl = `{:url('threec_product/proxy_pdf')}?url=${encodeURIComponent(originalPdfUrl)}`;-->
 
-<!--    // 5. 使用我们自己的代理URL加载并渲染文档-->
+<!--    // 3. 加载并渲染文档-->
 <!--    pdfjsLib.getDocument(pdfProxyUrl).promise.then(function(pdf) {-->
 <!--        return pdf.getPage(1);-->
 <!--    }).then(function(page) {-->
+<!--        // -&#45;&#45; 并行操作：同时渲染页面并提取文本 -&#45;&#45;-->
 <!--        const viewport = page.getViewport({ scale: 2.0 });-->
 <!--        canvas.height = viewport.height;-->
 <!--        canvas.width = viewport.width;-->
-<!--        return page.render({ canvasContext: context, viewport: viewport }).promise;-->
-<!--    }).then(function () {-->
-<!--        // 6. 渲染成功后，为canvas绑定点击放大事件-->
-<!--        if (window.parent && window.parent.Layer) {-->
+
+<!--        // a. 渲染页面-->
+<!--        page.render({ canvasContext: context, viewport: viewport });-->
+
+<!--        // b. 提取文本内容-->
+<!--        return page.getTextContent();-->
+
+<!--    }).then(function(textContent) {-->
+<!--        const allItems = textContent.items;-->
+
+<!--        // -&#45;&#45; 1. 打印您需要的原始数据日志 -&#45;&#45;-->
+<!--        console.log("-&#45;&#45; 1. 原始文本及坐标信息 -&#45;&#45;");-->
+<!--        const allItemsWithCoords = allItems.map(item => ({-->
+<!--            text: item.str,-->
+<!--            x: Math.round(item.transform[4]),-->
+<!--            y: Math.round(item.transform[5])-->
+<!--        }));-->
+<!--        console.table(allItemsWithCoords);-->
+<!--        // -&#45;&#45; 日志结束 -&#45;&#45;-->
+
+<!--        // -&#45;&#45; 2. 横向解析：发票号码和开票日期 -&#45;&#45;-->
+<!--        const invoiceNumberLine = allItems.filter(item => item.transform[5] > 350 && item.transform[5] < 360).map(item => item.str).join('');-->
+<!--        const invoiceDateLine = allItems.filter(item => item.transform[5] > 330 && item.transform[5] < 340).map(item => item.str).join('');-->
+<!--        let invoiceNumber = invoiceNumberLine.match(/发票号码[:：](.+)/)?.[1] || '';-->
+<!--        let invoiceDate = invoiceDateLine.match(/开票日期[:：](.+)/)?.[1] || '';-->
+
+<!--        // -&#45;&#45; 3. 横向解析：购买方和销售方 -&#45;&#45;-->
+<!--        const partyItems = allItems.filter(item => item.transform[5] > 250 && item.transform[5] < 300);-->
+<!--        // 使用您认为最准确的逻辑-->
+<!--        let fullBuyerText = partyItems.filter(item => item.transform[4] < 300).map(item => item.str).join('');-->
+<!--        let buyerNameMatch = fullBuyerText.match(/名称[:：](.+)/);-->
+<!--        let buyerName = buyerNameMatch ? buyerNameMatch[1].split('统一社会')[0].trim() : '';-->
+
+<!--        let fullSellerText = partyItems.filter(item => item.transform[4] > 300).map(item => item.str).join('');-->
+<!--        let sellerNameMatch = fullSellerText.match(/名称[:：](.+)/);-->
+<!--        let sellerName = sellerNameMatch ? sellerNameMatch[1].split('统一社会')[0].trim() : '';-->
+
+
+<!--        // -&#45;&#45; 4. 纵向解析：项目名称和规格型号 -&#45;&#45;-->
+<!--        const itemBodyItems = allItems.filter(item => item.transform[5] > 150 && item.transform[5] < 230);-->
+<!--        let itemName = itemBodyItems.filter(item => item.transform[4] < 110).sort((a, b) => b.transform[5] - a.transform[5]).map(item => item.str).join(' ').trim();-->
+<!--        let itemModel = itemBodyItems.filter(item => item.transform[4] > 110 && item.transform[4] < 180).sort((a, b) => b.transform[5] - a.transform[5]).map(item => item.str).join(' ').trim();-->
+
+<!--        // -&#45;&#45; 5. 横向解析：备注和合计金额 -&#45;&#45;-->
+<!--        const remarksText = allItems.filter(item => item.transform[5] > 60 && item.transform[5] < 100).map(item => item.str).join('');-->
+<!--        const totalAmountText = allItems.filter(item => item.transform[5] > 100 && item.transform[5] < 110).map(item => item.str).join('');-->
+
+<!--        let taobaoOrderId = remarksText.match(/淘宝订单号[:：](\d+)/)?.[1] || '未找到';-->
+<!--        let alipayOrderId = remarksText.match(/支付宝订单号[:：](\d+)/)?.[1] || '未找到';-->
+<!--        let subsidyAmount = remarksText.match(/政府补贴金额[:：]([\d.]+)/)?.[1] || '未找到';-->
+<!--        let paidAmount = remarksText.match(/实付金额[:：]([\d.]+)/)?.[1] || '未找到';-->
+<!--        let totalAmount = totalAmountText.match(/（小写）¥?([\d.]+)/)?.[1] || '未找到';-->
+
+<!--        // -&#45;&#45; 6. 整合并打印最终结果 -&#45;&#45;-->
+<!--        const structuredResult = {-->
+<!--            '销售方名称': sellerName,-->
+<!--            '购买方名称': buyerName,-->
+<!--            '项目名称': itemName,-->
+<!--            '规格型号': itemModel,-->
+<!--            '淘宝订单号': taobaoOrderId,-->
+<!--            '支付宝订单号': alipayOrderId,-->
+<!--            '开票日期': invoiceDate,-->
+<!--            '发票号码': invoiceNumber,-->
+<!--            '政府补贴金额': subsidyAmount,-->
+<!--            '实付金额': paidAmount,-->
+<!--            '价税合计金额': totalAmount,-->
+<!--            '旧机回收金额': '未找到'-->
+<!--        };-->
+
+<!--        console.log("-&#45;&#45; 2. 结构化解析结果 -&#45;&#45;");-->
+<!--        console.table(structuredResult);-->
+
+<!--    }).then(function() {-->
+<!--        // -&#45;&#45; 为canvas绑定点击放大事件 -&#45;&#45;-->
+<!--        if (window.parent && window.parent.Layer && window.parent.$) {-->
 <!--            const Layer = window.parent.Layer;-->
+<!--            const $ = window.parent.$;-->
+
 <!--            canvas.addEventListener('click', function () {-->
-<!--                // 调用父页面的Layer.photos来放大-->
+<!--                // -&#45;&#45; 核心改动：获取当前弹窗的z-index并加1 -&#45;&#45;-->
+<!--                const parentLayer = $(canvas).closest('.layui-layer');-->
+
+<!--                // -&#45;&#45; 修改结束 -&#45;&#45;-->
+
 <!--                Layer.photos({-->
 <!--                    photos: {-->
 <!--                        "data": [{-->
-<!--                            // 将canvas的当前内容转换为图片数据URL-->
 <!--                            "src": canvas.toDataURL("image/png")-->
-<!--                        }]-->
-<!--                    }-->
+<!--                        }],-->
+
+<!--                    },-->
+<!--                    zIndex: 99999999-->
 <!--                });-->
 <!--            });-->
 <!--        }-->
 <!--    });-->
 <!--</script>-->
+<!--{/if}-->
 
+<!--<script>-->
+<!--    const canvas = document.getElementById('sn-image-native');-->
+<!--    const viewport = page.getViewport({ scale: 2.0 });-->
+<!--    canvas.height = viewport.height;-->
+<!--    canvas.width = viewport.width;-->
 
-<script type="module">
-    // 1. 从我们已经确认可用的路径加载
-    import * as pdfjsLib from '/assets/js/pdfjs/build/pdf.mjs';
+<!--    // a. 渲染页面-->
+<!--    // b. .promise 确保在渲染完成后再执行下一步-->
+<!--    page.render({ canvasContext: context, viewport: viewport }).promise;-->
+<!--    // 4. 渲染成功后，为canvas绑定点击放大事件-->
+<!--    if (window.parent && window.parent.Layer) {-->
+<!--        const Layer = window.parent.Layer;-->
+<!--        const $ = window.parent.$;-->
 
-    // 2. 设置 worker 路径
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/js/pdfjs/build/pdf.worker.mjs';
+<!--        canvas.addEventListener('click', function () {-->
+<!--            // 获取当前所有layer的最大z-index-->
+<!--            let maxZIndex = 0;-->
+<!--            $('.layui-layer', window.parent.document).each(function() {-->
+<!--                const zIndex = parseInt($(this).css('z-index')) || 0;-->
+<!--                if (zIndex > maxZIndex) {-->
+<!--                    maxZIndex = zIndex;-->
+<!--                }-->
+<!--            });-->
 
-    const canvas = document.getElementById('pdf-canvas');
-    const originalPdfUrl = canvas.dataset.fileUrl;
-    const context = canvas.getContext('2d');
-    const pdfProxyUrl = `{:url('threec_product/proxy_pdf')}?url=${encodeURIComponent(originalPdfUrl)}`;
+<!--            // 设置更高的z-index-->
+<!--            const photoZIndex = Math.max(maxZIndex + 100, 99999999);-->
 
-    // 3. 加载并渲染文档
-    pdfjsLib.getDocument(pdfProxyUrl).promise.then(function(pdf) {
-        return pdf.getPage(1);
-    }).then(function(page) {
-        // --- 并行操作：同时渲染页面并提取文本 ---
-        const viewport = page.getViewport({ scale: 2.0 });
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+<!--            Layer.photos({-->
+<!--                photos: {-->
+<!--                    "data": [{-->
+<!--                        "src": canvas.toDataURL("image/png", 1.0)-->
+<!--                    }]-->
+<!--                },-->
+<!--                zIndex: photoZIndex,-->
+<!--                shade: [0.3, '#393D49'],-->
+<!--                shadeClose: true,-->
+<!--                closeBtn: 1, // 显示关闭按钮-->
+<!--                anim: 0, // 弹出动画-->
+<!--                isOutAnim: true, // 关闭动画-->
+<!--            });-->
+<!--        });-->
+<!--    }-->
+<!--</script>-->
 
-        // a. 渲染页面
-        page.render({ canvasContext: context, viewport: viewport });
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const image = document.getElementById('sn-image-native');
 
-        // b. 提取文本内容
-        return page.getTextContent();
-
-    }).then(function(textContent) {
-        // --- 文本提取成功后，打印到控制台 ---
-        // const fullText = textContent.items.map(item => item.str).join(' ');
-        // console.log("--- PDF 文本提取结果 ---");
-        // console.log(fullText);
-
-        const lines = {};
-        // 1. 根据Y坐标（item.transform[5]）将文本项分组，聚合成行
-        textContent.items.forEach(item => {
-            const y = Math.round(item.transform[5]); // 四舍五入Y坐标
-            if (!lines[y]) {
-                lines[y] = [];
-            }
-            lines[y].push(item);
-        });
-
-        // 2. 对每一行内的文本项按X坐标（item.transform[4]）排序，并拼接成字符串
-        const sortedLines = Object.keys(lines)
-            .sort((a, b) => b - a) // 按Y坐标从上到下排序
-            .map(y => {
-                return lines[y]
-                    .sort((a, b) => a.transform[4] - b.transform[4]) // 按X坐标从左到右排序
-                    .map(item => item.str)
-                    .join('');
-            });
-
-        // 3. 从重组好的行文本中提取我们需要的信息
-        const invoiceData = {};
-        sortedLines.forEach(line => {
-            if (line.includes('发票号码：')) {
-                invoiceData['发票号码'] = line.replace('发票号码：', '').trim();
-            }
-            if (line.includes('开票日期：')) {
-                invoiceData['开票日期'] = line.replace('开票日期：', '').trim();
-            }
-            // 您可以继续添加其他字段的提取规则
-        });
-
-        // 4. 在控制台以清晰的格式打印出最终结果
-        console.log("--- PDF 结构化提取结果 ---");
-        console.table(invoiceData);
-
-    }).then(function() {
-        // --- 为canvas绑定点击放大事件 ---
-        if (window.parent && window.parent.Layer && window.parent.$) {
+        if (image && window.parent && window.parent.Layer) {
             const Layer = window.parent.Layer;
             const $ = window.parent.$;
 
-            canvas.addEventListener('click', function () {
-                // --- 核心改动：获取当前弹窗的z-index并加1 ---
-                const parentLayer = $(canvas).closest('.layui-layer');
+            image.addEventListener('click', function () {
+                // 获取当前所有layer的最大z-index
+                let maxZIndex = 0;
+                $('.layui-layer', window.parent.document).each(function() {
+                    const zIndex = parseInt($(this).css('z-index')) || 0;
+                    if (zIndex > maxZIndex) {
+                        maxZIndex = zIndex;
+                    }
+                });
 
-                // --- 修改结束 ---
+                // 设置更高的z-index
+                const photoZIndex = Math.max(maxZIndex + 100, 99999999);
 
                 Layer.photos({
                     photos: {
                         "data": [{
-                            "src": canvas.toDataURL("image/png")
-                        }],
-
+                            "src": image.src // 直接使用图片的src
+                        }]
                     },
-                    zIndex: 99999999
+                    zIndex: photoZIndex,
+                    shade: [0.3, '#393D49'],
+                    shadeClose: true,
+                    closeBtn: 1, // 显示关闭按钮
+                    anim: 0, // 弹出动画
+                    isOutAnim: true, // 关闭动画
+
                 });
             });
         }
     });
 </script>
-{/if}

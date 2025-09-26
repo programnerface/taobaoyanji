@@ -8,8 +8,10 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Reader\Csv;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+use think\Db;
 use think\db\exception\BindParamException;
 use think\exception\PDOException;
+use think\exception\ValidateException;
 
 /**
  * 
@@ -103,46 +105,108 @@ class ThreecProduct extends Backend
     /**
      * 通用的图片/PDF详情方法
      */
+//    public function sn_ocr($ids = null)
+//    {
+//        $row = $this->model->get(['id' => $ids]);
+//        if (!$row) {
+//            $this->error(__('No Results were found'));
+//        }
+//
+//        // 从URL获取字段名
+//        $fieldName = $this->request->get('field', 'sn_image_url');
+//        $allowedFields = ['sn_image_url', 'inspection_image_url', 'screen_on_image_url', 'invoice_url', 'tracking_map_url'];
+//        if (!in_array($fieldName, $allowedFields)) {
+//            $this->error(__('Invalid parameter'));
+//        }
+//
+//        // 动态获取URL
+//        $fileUrl = $row[$fieldName] ?? '';
+//        if (empty($fileUrl) || $fileUrl === '无') {
+//            $this->error('找不到文件链接');
+//        }
+//
+//        if ($fileUrl && !preg_match("/^https?:\/\//i", $fileUrl)) {
+//            // 如果不是，就使用 cdnurl() 函数为其加上域名，变为完整URL
+//            $fileUrl = cdnurl($fileUrl, true);
+//        }
+//        // 判断内容类型
+//        $viewType = 'image'; // 默认为图片
+////        if ($fieldName === 'invoice_url'  && substr(strtolower($fileUrl), -4) === '.pdf') {
+////            $viewType = 'pdf';
+////        }
+//
+//        if (substr(strtolower($fileUrl), -4) === '.pdf') {
+//            $viewType = 'pdf';
+//        }
+//        // 标题映射
+//        $titleMap = [
+//            'sn_image_url'       => 'SN图片',
+//            'inspection_image_url' => '验机图片',
+//            'screen_on_image_url'  => '亮屏照片',
+//            'invoice_url'        => '发票详情', // 标题改为详情
+//            'tracking_map_url'   => '物流轨迹图',
+//        ];
+//        $title = $titleMap[$fieldName] ?? '文件详情';
+//
+//        // 将所有动态数据分配给视图
+//        $this->view->assign("row", $row->toArray());
+//        $this->view->assign("file_url", $fileUrl);
+//        $this->view->assign("title", $title);
+//        $this->view->assign("viewType", $viewType);
+//
+//        return $this->view->fetch('threec_product/sn_ocr');
+//    }
+
+    /**
+     * 通用的详情弹窗加载方法
+     */
     public function sn_ocr($ids = null)
     {
-        $row = $this->model->get(['id' => $ids]);
+        $row = $this->model->get($ids);
         if (!$row) {
             $this->error(__('No Results were found'));
         }
 
-        // 从URL获取字段名
+        // 从URL获取字段名, 默认为 'sn_image_url'
         $fieldName = $this->request->get('field', 'sn_image_url');
-        $allowedFields = ['sn_image_url', 'inspection_image_url', 'screen_on_image_url', 'invoice_url', 'tracking_map_url'];
-        if (!in_array($fieldName, $allowedFields)) {
-            $this->error(__('Invalid parameter'));
-        }
 
-        // 动态获取URL
+        // ... (您之前的URL获取、白名单检查、cdnurl处理等逻辑保持不变)
         $fileUrl = $row[$fieldName] ?? '';
         if (empty($fileUrl) || $fileUrl === '无') {
             $this->error('找不到文件链接');
         }
-
         if ($fileUrl && !preg_match("/^https?:\/\//i", $fileUrl)) {
-            // 如果不是，就使用 cdnurl() 函数为其加上域名，变为完整URL
             $fileUrl = cdnurl($fileUrl, true);
         }
-        // 判断内容类型
-        $viewType = 'image'; // 默认为图片
-//        if ($fieldName === 'invoice_url'  && substr(strtolower($fileUrl), -4) === '.pdf') {
-//            $viewType = 'pdf';
-//        }
 
+        // --- 核心改动：根据字段名选择视图文件 ---
+
+        // 1. 定义一个视图映射关系
+        $viewMap = [
+            'invoice_url'        => 'threec_product/invoice_ocr',
+            'tracking_map_url'   => 'threec_product/trackingmap',
+            // 如果将来还有其他特殊视图，可以在这里继续添加
+        ];
+
+        // 2. 根据当前字段名，从映射中查找对应的视图文件
+        //    如果找不到，则使用默认的 'threec_product/sn_ocr'
+        $viewTemplate = $viewMap[$fieldName] ?? 'threec_product/sn_ocr';
+
+        // --- 修改结束 ---
+
+        // 判断内容类型
+        $viewType = 'image';
         if (substr(strtolower($fileUrl), -4) === '.pdf') {
             $viewType = 'pdf';
         }
+
         // 标题映射
         $titleMap = [
             'sn_image_url'       => 'SN图片',
             'inspection_image_url' => '验机图片',
             'screen_on_image_url'  => '亮屏照片',
-            'invoice_url'        => '发票详情', // 标题改为详情
-            'tracking_map_url'   => '物流轨迹图'
+            'invoice_url'        => '发票详情',
+            'tracking_map_url'   => '物流轨迹图',
         ];
         $title = $titleMap[$fieldName] ?? '文件详情';
 
@@ -152,48 +216,211 @@ class ThreecProduct extends Backend
         $this->view->assign("title", $title);
         $this->view->assign("viewType", $viewType);
 
-        return $this->view->fetch('threec_product/sn_ocr');
+        // 使用我们动态选择的视图模板进行渲染
+        return $this->view->fetch($viewTemplate);
     }
 
+    public function invoice_ocr($ids = null)
+    {
+        $row = $this->model->get($ids);
+        if (!$row) {
+            $this->error(__('No Results were found'));
+        }
 
+        $data = $row->toArray();
+
+        // 明确获取发票链接字段
+        $fileUrl = $data['invoice_url'] ?? '';
+        if (empty($fileUrl) || $fileUrl === '无') {
+            $this->error('找不到发票链接');
+        }
+
+        // 准备需要传递给视图的数据
+        $this->view->assign("row", $data);
+        $this->view->assign("file_url", $fileUrl);
+
+        // 指定渲染新的 invoice_ocr.html 模板文件
+        return $this->view->fetch('threec_product/invoice_ocr');
+    }
 
     /**
      * 新增：PDF代理方法，用于解决跨域问题
      */
+//    public function proxy_pdf()
+//    {
+//        $pdfUrl = $this->request->get('url');
+//        if (!$pdfUrl || !filter_var($pdfUrl, FILTER_VALIDATE_URL)) {
+//            $this->error('无效的PDF链接');
+//        }
+//
+//        // --- 核心逻辑：来自您提供的脚本，更健壮 ---
+//        $contextOptions = [
+//            'http' => [
+//                'method' => 'GET',
+//                'header' => [
+//                    // 模拟浏览器访问，防止被服务器拦截
+//                    'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+//                ],
+//                'timeout' => 30, // 设置30秒超时
+//            ]
+//        ];
+//        $context = stream_context_create($contextOptions);
+//        // --- 逻辑结束 ---
+//
+//        // 使用创建的上下文来获取文件内容
+//        $pdfContent = file_get_contents($pdfUrl, false, $context);
+//
+//        if ($pdfContent === false) {
+//            $this->error('PHP无法获取PDF文件内容，请检查服务器网络或目标URL是否有效');
+//        }
+//
+//        // 使用FastAdmin/ThinkPHP的方式返回响应
+//        // 这会正确设置Content-Type并输出内容
+//        return response($pdfContent, 200, ['Content-Type' => 'application/pdf']);
+//    }
+
+
+    /**
+     * 新增：PDF代理方法，用于解决跨域问题 (cURL健壮版)
+     */
+//    public function proxy_pdf()
+//    {
+//        $pdfUrl = $this->request->get('url');
+//        if (!$pdfUrl || !filter_var($pdfUrl, FILTER_VALIDATE_URL)) {
+//            $this->error('无效的PDF链接');
+//        }
+//
+//        // 1. 初始化 cURL
+//        $ch = curl_init();
+//
+//        // 2. 设置 cURL 选项
+//        curl_setopt($ch, CURLOPT_URL, $pdfUrl);
+//        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // 将结果作为字符串返回
+//        curl_setopt($ch, CURLOPT_HEADER, 0); // 不需要HTTP头
+//        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); // 跟随重定向
+//        curl_setopt($ch, CURLOPT_TIMEOUT, 30); // 设置30秒总超时
+//        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // 设置10秒连接超时
+//
+//        // 模拟浏览器User-Agent，防止被目标服务器拦截
+//        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+//
+//        // 在Windows本地环境中，常常需要禁用SSL证书验证
+//        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+//        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+//
+//        // 3. 执行 cURL 请求
+//        $pdfContent = curl_exec($ch);
+//
+//        // 4. 检查是否有cURL级别的错误
+//        if(curl_errno($ch)){
+//            $error_msg = curl_error($ch);
+//            curl_close($ch);
+//            // 将具体的cURL错误信息返回给前端
+//            $this->error('cURL下载文件失败: ' . $error_msg);
+//        }
+//
+//        // 5. 关闭 cURL
+//        curl_close($ch);
+//
+//        if ($pdfContent === false || empty($pdfContent)) {
+//            $this->error('获取PDF文件内容为空或失败');
+//        }
+//
+//        // 6. 使用FastAdmin/ThinkPHP的方式返回响应
+//        return response($pdfContent, 200, ['Content-Type' => 'application/pdf']);
+//    }
+
+
+//new
+    /**
+     * 新增：PDF代理方法 (最终健壮版)
+     */
     public function proxy_pdf()
     {
-        $pdfUrl = $this->request->get('url');
-        if (!$pdfUrl || !filter_var($pdfUrl, FILTER_VALIDATE_URL)) {
-            $this->error('无效的PDF链接');
+        // 引入ThinkPHP的Response类
+        $response = \think\Response::create();
+
+        try {
+            $pdfUrl = $this->request->get('url');
+            if (!$pdfUrl || !filter_var($pdfUrl, FILTER_VALIDATE_URL)) {
+                throw new \Exception('无效的PDF链接', 400);
+            }
+
+            // 使用 cURL 获取内容
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $pdfUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_HEADER, 0);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            $pdfContent = curl_exec($ch);
+
+            if (curl_errno($ch)) {
+                throw new \Exception('cURL下载文件失败: ' . curl_error($ch), 502);
+            }
+            curl_close($ch);
+
+            if (empty($pdfContent)) {
+                throw new \Exception('获取的PDF文件内容为空', 204);
+            }
+
+            // 成功：返回PDF内容
+            return $response->data($pdfContent)->contentType('application/pdf')->code(200);
+
+        } catch (\Exception $e) {
+            // 失败：返回一个纯文本的错误信息和对应的HTTP状态码
+            // 这样前端JS的fetch就能正确捕获到错误
+            return $response->data($e->getMessage())->contentType('text/plain')->code($e->getCode() > 0 ? $e->getCode() : 500);
         }
-
-        // --- 核心逻辑：来自您提供的脚本，更健壮 ---
-        $contextOptions = [
-            'http' => [
-                'method' => 'GET',
-                'header' => [
-                    // 模拟浏览器访问，防止被服务器拦截
-                    'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                ],
-                'timeout' => 30, // 设置30秒超时
-            ]
-        ];
-        $context = stream_context_create($contextOptions);
-        // --- 逻辑结束 ---
-
-        // 使用创建的上下文来获取文件内容
-        $pdfContent = file_get_contents($pdfUrl, false, $context);
-
-        if ($pdfContent === false) {
-            $this->error('PHP无法获取PDF文件内容，请检查服务器网络或目标URL是否有效');
-        }
-
-        // 使用FastAdmin/ThinkPHP的方式返回响应
-        // 这会正确设置Content-Type并输出内容
-        return response($pdfContent, 200, ['Content-Type' => 'application/pdf']);
     }
 
 
+
+
+
+    /**
+     * 新增：显示校验报告
+     */
+    public function report($ids = null)
+    {
+        $row = $this->model->get($ids);
+        if (!$row) {
+            $this->error(__('No Results were found'));
+        }
+
+        // --- 核心改动：处理报告时间 ---
+        $generationTime = $row->report_time;
+        // 检查 report_time 字段是否为空或无效
+        if (empty($generationTime) || $generationTime == '0000-00-00 00:00:00') {
+            // 获取当前时间字符串
+            $currentTimeString = date('Y-m-d H:i:s');
+            // 更新数据库并用于本次显示
+            $row->report_time = $currentTimeString;
+            $row->save();
+            $generationTime = $currentTimeString;
+        }
+        // --- 修改结束 ---
+
+        $data = $row->toArray();
+
+        // 拼接副标题
+        $subtitle = sprintf(
+            '线上平台订单号: %s / 商户订单号: %s / 生成时间: %s',
+            $data['platform_order_id'],
+            $data['merchant_order_id'],
+            $generationTime
+        );
+
+        $this->view->assign("row", $data);
+        $this->view->assign("subtitle", $subtitle);
+        $this->view->assign("verification_status", $data['verification_status']);
+
+        return $this->view->fetch('threec_product/yanjibaogao');
+    }
 
     /**
      * 导入
@@ -332,6 +559,35 @@ class ThreecProduct extends Backend
 
         $this->success();
     }
+
+    /**
+     * 重写编辑方法
+     */
+//    public function edit($ids = null)
+//    {
+//        $row = $this->model->get($ids);
+//        if (!$row) {
+//            $this->error(__('No Results were found'));
+//        }
+//        if ($this->request->isPost()) {
+//            $params = $this->request->post("row/a");
+//            if ($params) {
+//                try {
+//                    // 这行代码会触发上面模型里的 beforeWrite 事件
+//                    $result = $row->save($params);
+//                    if ($result === false) {
+//                        $this->error($row->getError());
+//                    }
+//                    $this->success();
+//                } catch (\Exception $e) {
+//                    $this->error($e->getMessage());
+//                }
+//            }
+//            $this->error(__('Parameter %s can not be empty', ''));
+//        }
+//        $this->view->assign("row", $row);
+//        return $this->view->fetch();
+//    }
 
 
 }
